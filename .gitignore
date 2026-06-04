@@ -1,0 +1,28 @@
+# Dependências
+node_modules/
+**/node_modules/
+
+# Build
+frontend/dist/
+dist/
+
+# Variáveis de ambiente (NUNCA commitar — contém a chave da API)
+.env
+**/.env
+.env.local
+*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Claude (sessões/planos locais)
+.claude/
