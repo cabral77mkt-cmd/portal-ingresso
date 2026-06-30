@@ -595,10 +595,16 @@ app.post('/api/auth/recover', async (req, res) => {
 });
 
 // ── Frontend estático (build de produção) ────────────────────────────────────
+// Aceita dois layouts: monorepo local (../frontend/dist) ou deploy
+// self-contained (./public, quando o build é copiado pra dentro do backend).
 const path = require('path');
 const fs = require('fs');
-const distPath = path.join(__dirname, '..', 'frontend', 'dist');
-if (fs.existsSync(distPath)) {
+const distCandidates = [
+  path.join(__dirname, 'public'),
+  path.join(__dirname, '..', 'frontend', 'dist'),
+];
+const distPath = distCandidates.find((p) => fs.existsSync(p));
+if (distPath) {
   app.use(express.static(distPath));
   // SPA fallback — todas as rotas não-API devolvem o index.html
   app.get('*', (req, res) => {
