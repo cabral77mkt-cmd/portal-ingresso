@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { IconCheck } from '../components/Icons.jsx';
 
 export default function RecuperaSenha() {
   const [value, setValue] = useState('');
@@ -35,16 +36,18 @@ export default function RecuperaSenha() {
     <div className="min-h-screen flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <Link to="/" className="text-3xl font-bold text-primary tracking-tight">
-            tick<span className="text-white">7</span>
+          <Link to="/" className="inline-flex items-center justify-center" style={{ textDecoration: 'none' }}>
+            <img src="/logo.png" alt="Portal do Ingresso" style={{ height: 32, width: 'auto' }} />
           </Link>
-          <p className="text-gray-400 mt-2">Recuperar senha</p>
+          <p className="text-muted mt-3">Recuperar senha</p>
         </div>
 
         <div className="card p-8">
           {sent ? (
             <div className="text-center py-4">
-              <p className="text-4xl mb-4">📧</p>
+              <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+                <IconCheck size={28} />
+              </div>
               <h3 className="text-white font-bold text-lg mb-2">E-mail enviado!</h3>
               <p className="text-gray-400 text-sm">
                 Verifique sua caixa de entrada e siga as instruções para redefinir sua senha.

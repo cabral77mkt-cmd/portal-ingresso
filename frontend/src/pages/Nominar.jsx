@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { gticket, validarCPF } from '../services/gticket.js';
+import { IconCheck } from '../components/Icons.jsx';
 
 export default function Nominar() {
   const { pagId } = useParams();
@@ -98,7 +99,9 @@ export default function Nominar() {
   if (done) {
     return (
       <div className="max-w-lg mx-auto px-4 py-16 text-center">
-        <div className="text-5xl mb-4">✅</div>
+        <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+          <IconCheck size={32} />
+        </div>
         <h1 className="text-2xl font-bold text-white mb-2">Ingressos nominados!</h1>
         <p className="text-gray-400 mb-6">Os nomes foram associados aos ingressos com sucesso.</p>
         <Link to={`/pedido/${pagId}`} className="btn-primary inline-block">Ver pedido</Link>

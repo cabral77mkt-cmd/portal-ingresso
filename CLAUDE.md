@@ -6,6 +6,24 @@
 
 ---
 
+## 0. Escopo de alteração — NUNCA tocar sem pedido explícito
+
+Estes arquivos/pastas são **protegidos**. Só altero se o usuário pedir diretamente e por nome:
+
+| Arquivo / Pasta | Motivo |
+|---|---|
+| `backend/server.js` | Lógica de API e roteamento — qualquer mudança quebra o site |
+| `backend/.env` | Credenciais — nunca tocar |
+| `frontend/vite.config.js` | Configuração de build — afeta chunks, proxy, portas |
+| `frontend/tailwind.config.js` | Tokens de design — só alterar em tarefa de design system |
+| `frontend/src/services/gticket.js` | Contratos de API — só alterar em tarefa de API |
+| `frontend/src/pages/` (exceto Home) | Outras páginas — só alterar se a tarefa nomear a página |
+| `frontend/package.json` / `package-lock.json` | Dependências — só instalar se pedido |
+
+**Regra de ouro de escopo:** se a tarefa diz "design", mexo apenas em `.css`, `.jsx` visual e componentes de UI. Não otimizo build, não renomeio variáveis, não reorganizo imports, não altero config — a menos que o usuário peça explicitamente.
+
+---
+
 ## 0. Regras de ouro (inquebráveis)
 
 1. **Fonte de dados ÚNICA = G-ticket** (`sis.tickfy.com.br`). **Base44 foi REMOVIDO 100%** — nunca reintroduzir `base44`, nem qualquer segundo painel/banco.

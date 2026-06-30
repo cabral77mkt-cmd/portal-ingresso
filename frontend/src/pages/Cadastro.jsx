@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { validarCPF } from '../services/gticket.js';
+import { IconCheck } from '../components/Icons.jsx';
 
 const GENEROS = [
   { value: '', label: 'Selecione o gênero' },
@@ -133,7 +134,9 @@ export default function Cadastro() {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <div className="text-center">
-          <p className="text-5xl mb-4">🎉</p>
+          <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+            <IconCheck size={32} />
+          </div>
           <h2 className="text-2xl font-bold text-white mb-2">Conta criada!</h2>
           <p className="text-gray-400">Redirecionando...</p>
         </div>
@@ -145,19 +148,10 @@ export default function Cadastro() {
     <div className="min-h-screen flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-2xl">
         <div className="text-center mb-8">
-          <Link to="/" className="flex items-center justify-center gap-2 mb-2">
-            <svg width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="2" y="2" width="28" height="28" rx="6" fill="none" stroke="#C5FF00" strokeWidth="2.5"/>
-              <rect x="8" y="6" width="16" height="20" rx="3" fill="none" stroke="#C5FF00" strokeWidth="2"/>
-              <rect x="13" y="8" width="5" height="16" rx="2" fill="#3B82F6"/>
-              <circle cx="21" cy="16" r="1.5" fill="#C5FF00"/>
-            </svg>
-            <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
-              <span style={{ color: '#fff', fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '1rem', letterSpacing: '-0.01em' }}>Portal</span>
-              <span style={{ color: '#C5FF00', fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: '0.6rem', letterSpacing: '0.12em', textTransform: 'uppercase' }}>do Ingresso</span>
-            </div>
+          <Link to="/" className="inline-flex items-center justify-center mb-3" style={{ textDecoration: 'none' }}>
+            <img src="/logo.png" alt="Portal do Ingresso" style={{ height: 32, width: 'auto' }} />
           </Link>
-          <p className="text-gray-400 mt-2">Crie sua conta</p>
+          <p className="text-muted mt-2">Crie sua conta</p>
         </div>
 
         <div className="card p-8">
@@ -165,7 +159,7 @@ export default function Cadastro() {
 
             {/* Dados de acesso */}
             <div>
-              <p className="text-white font-semibold mb-3 text-sm uppercase tracking-wider" style={{ color: 'rgba(197,255,0,0.8)' }}>Dados de acesso</p>
+              <p className="text-white font-semibold mb-3 text-sm uppercase tracking-wider" style={{ color: 'rgba(164,232,11,0.8)' }}>Dados de acesso</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
                   <label className="text-gray-400 text-sm block mb-1">Nome completo *</label>
@@ -193,7 +187,7 @@ export default function Cadastro() {
 
             {/* Dados pessoais */}
             <div>
-              <p className="text-white font-semibold mb-3 text-sm uppercase tracking-wider" style={{ color: 'rgba(197,255,0,0.8)' }}>Dados pessoais</p>
+              <p className="text-white font-semibold mb-3 text-sm uppercase tracking-wider" style={{ color: 'rgba(164,232,11,0.8)' }}>Dados pessoais</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="text-gray-400 text-sm block mb-1">CPF *</label>
@@ -238,7 +232,7 @@ export default function Cadastro() {
 
             {/* Endereço */}
             <div>
-              <p className="text-white font-semibold mb-3 text-sm uppercase tracking-wider" style={{ color: 'rgba(197,255,0,0.8)' }}>Endereço</p>
+              <p className="text-white font-semibold mb-3 text-sm uppercase tracking-wider" style={{ color: 'rgba(164,232,11,0.8)' }}>Endereço</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="text-gray-400 text-sm block mb-1">CEP *</label>

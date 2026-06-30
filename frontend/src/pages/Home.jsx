@@ -1,62 +1,106 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { gticket } from '../services/gticket.js';
 import EventCard from '../components/EventCard.jsx';
+import { IconTicket } from '../components/Icons.jsx';
 
-// Converte evento do G-ticket (gmet=1) para o shape usado pelo EventCard
+gsap.registerPlugin(ScrollTrigger);
+
 function mapEvent(e) {
   const [d, m, y] = String(e.data || '').split('/');
-  const iso = (y && m && d) ? `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}T${(e.horario || '00:00')}:00` : '';
+  const iso = (y && m && d)
+    ? `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}T${(e.horario || '00:00')}:00`
+    : '';
   return {
-    id: e.codigo,
-    gticket_id: e.codigo,
-    title: e.nome,
-    image_url: e.logo,
-    date: iso,
-    rawDate: e.data,          // DD/MM/YYYY — usado para o corte "some após 1 dia"
-    location: e.local,
-    city: e.cidade,
-    state: e.estado,
-    featured: e.destaque === 'S',
-    status: 'active',
+    id: e.codigo, gticket_id: e.codigo,
+    title: e.nome, image_url: e.logo,
+    date: iso, rawDate: e.data,
+    location: e.local, city: e.cidade, state: e.estado,
+    featured: e.destaque === 'S', status: 'active',
   };
 }
 
 export default function Home() {
-  const [events, setEvents] = useState([]);
+  const [events,  setEvents]  = useState([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [city, setCity] = useState('');
-  const [genres, setGenres] = useState([]);
-  const [genre, setGenre] = useState(''); // descrição do gênero selecionado
+  const [search,  setSearch]  = useState('');
+  const [city,    setCity]    = useState('');
+  const [genres,  setGenres]  = useState([]);
+  const [genre,   setGenre]   = useState('');
+  const heroRef  = useRef(null);
+  const gsapCtx  = useRef(null);
 
   useEffect(() => {
     loadEvents();
-    // Carrega gêneros reais cadastrados (para os chips de categoria)
-    gticket.genres()
-      .then((d) => setGenres(d?.Lista || []))
-      .catch(() => {});
+    gticket.genres().then((d) => setGenres(d?.Lista || [])).catch(() => {});
   }, []);
+
+  // Hero entrance GSAP (sem aurora, sem genérico)
+  useLayoutEffect(() => {
+    const ctx = gsap.context(() => {
+      gsap.timeline({ defaults: { ease: 'power4.out' } })
+        .from('.hero-stamp',   { y: -20, opacity: 0, duration: 0.5 })
+        .from('.hero-line1',   { y: 80, skewX: -3, opacity: 0, duration: 0.9 }, '-=0.15')
+        .from('.hero-line2',   { y: 80, skewX: -3, opacity: 0, duration: 0.9 }, '-=0.65')
+        .from('.hero-line3',   { y: 80, skewX: -3, opacity: 0, duration: 0.9 }, '-=0.65')
+        .from('.hero-sub',     { y: 20, opacity: 0, duration: 0.5 }, '-=0.4')
+        .from('.hero-search',  { y: 18, opacity: 0, duration: 0.45 }, '-=0.3')
+        .from('.hero-numbers', { y: 14, opacity: 0, duration: 0.4 }, '-=0.25');
+    }, heroRef);
+    return () => ctx.revert();
+  }, []);
+
+  // ScrollTrigger nos cards
+  useEffect(() => {
+    if (loading) return;
+    if (gsapCtx.current) gsapCtx.current.revert();
+
+    gsapCtx.current = gsap.context(() => {
+      gsap.utils.toArray('.card-scroll-wrap').forEach((el, i) => {
+        gsap.from(el, {
+          scrollTrigger: { trigger: el, start: 'top 92%', toggleActions: 'play none none none' },
+          y: 60, opacity: 0,
+          duration: 0.75,
+          delay: (i % 3) * 0.06,
+          ease: 'power4.out',
+          clearProps: 'transform',
+        });
+      });
+
+      // Seção headers entram da esquerda
+      gsap.utils.toArray('.section-hd').forEach((el) => {
+        gsap.from(el, {
+          scrollTrigger: { trigger: el, start: 'top 88%' },
+          x: -40, opacity: 0, duration: 0.6, ease: 'power3.out',
+        });
+      });
+
+      // CTA final
+      gsap.from('.cta-inner', {
+        scrollTrigger: { trigger: '.cta-inner', start: 'top 88%' },
+        y: 50, opacity: 0, scale: 0.97, duration: 0.85, ease: 'power4.out',
+      });
+    });
+
+    return () => { if (gsapCtx.current) gsapCtx.current.revert(); };
+  }, [loading, events.length]);
 
   async function loadEvents() {
     try {
       setLoading(true);
-      // Fonte única: G-ticket. evento.asp gmet=1 retorna { Lista: [...] }
-      const data = await gticket.events.list();
+      const data  = await gticket.events.list();
       const lista = data?.Lista || data?.lista || [];
-
-      const now = Date.now();
-      const all = lista.map(mapEvent).filter((e) => {
-        // Some após 1 dia da data do evento (até a meia-noite do dia seguinte)
+      const now   = Date.now();
+      const all   = lista.map(mapEvent).filter((e) => {
         if (e.rawDate) {
           const [d, m, y] = e.rawDate.split('/').map(Number);
           if (d && m && y) {
-            const eventDate = new Date(y, m - 1, d + 1, 23, 59, 59, 999);
-            if (eventDate.getTime() < now) return false;
+            if (new Date(y, m - 1, d + 1, 23, 59, 59, 999).getTime() < now) return false;
           }
         }
         return true;
       });
-
       setEvents(all);
     } catch (err) {
       console.error('Erro ao carregar eventos:', err);
@@ -65,165 +109,389 @@ export default function Home() {
     }
   }
 
-  // Filtro por gênero usa a API de busca (a listagem não traz gênero por evento)
   async function applyGenre(desc) {
     if (genre === desc) { setGenre(''); loadEvents(); return; }
     setGenre(desc);
     try {
       setLoading(true);
-      const data = await gticket.events.search({ genero: desc });
+      const data  = await gticket.events.search({ genero: desc });
       const lista = data?.Lista || [];
-      const mapped = lista.map((e) => ({
-        id: e.lista_eventos || e.codigo,
-        gticket_id: e.lista_eventos || e.codigo,
-        title: e.nome,
-        image_url: e.logo,
+      setEvents(lista.map((e) => ({
+        id: e.lista_eventos || e.codigo, gticket_id: e.lista_eventos || e.codigo,
+        title: e.nome, image_url: e.logo,
         date: (() => {
           const [d, m, y] = String(e.data || '').split('/');
-          return (y && m && d) ? `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}T${e.horario || '00:00'}:00` : '';
+          return (y && m && d)
+            ? `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}T${e.horario || '00:00'}:00`
+            : '';
         })(),
-        location: e.local, city: e.cidade, state: e.estado, featured: false, status: 'active',
-      }));
-      setEvents(mapped);
-    } catch {
-      // mantém lista atual em caso de erro
-    } finally {
-      setLoading(false);
-    }
+        location: e.local, city: e.cidade, state: e.estado,
+        featured: false, status: 'active',
+      })));
+    } catch { /* mantém lista */ }
+    finally { setLoading(false); }
   }
 
-  const featured = useMemo(() => events.filter((e) => e.featured), [events]);
+  const featured    = useMemo(() => events.filter((e) => e.featured), [events]);
   const isFiltering = !!(search || city || genre);
-  const filtered = useMemo(() => events.filter((e) => {
+  const filtered    = useMemo(() => events.filter((e) => {
     const matchSearch = !search || e.title?.toLowerCase().includes(search.toLowerCase());
-    const matchCity = !city || e.city?.toLowerCase().includes(city.toLowerCase());
+    const matchCity   = !city   || e.city?.toLowerCase().includes(city.toLowerCase());
     return matchSearch && matchCity;
   }), [events, search, city]);
 
+
   return (
-    <div>
-      {/* ── Hero ──────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden" style={{ background: '#080808' }}>
-        {/* Glow radial */}
-        <div className="absolute inset-0 pointer-events-none" style={{
-          backgroundImage: 'radial-gradient(ellipse 70% 60% at 50% 0%, rgba(197,255,0,0.08) 0%, transparent 70%)',
-        }} />
-        <div className="relative max-w-7xl mx-auto px-6 pt-20 pb-16 text-center">
-          <div className="eyebrow mb-6 flex items-center justify-center gap-2">
-            <span className="live-dot" />
-            Plataforma de ingressos
+    <div style={{ background: 'var(--bg)' }}>
+
+      {/* ══════════════════════════════════════════════
+          HERO — Editorial tipo cartaz de show
+          ══════════════════════════════════════════════ */}
+      <div
+        ref={heroRef}
+        className="relative overflow-hidden"
+        style={{ minHeight: 'auto', display: 'flex', flexDirection: 'column' }}
+      >
+        {/* Fundo suave do poster do evento */}
+        {!loading && events.length > 0 && events[0].image_url && (
+          <div className="absolute inset-0 pointer-events-none" aria-hidden="true" style={{ zIndex: 0 }}>
+            <img
+              src={events[0].image_url} alt=""
+              className="w-full h-full object-cover"
+              style={{ filter: 'blur(80px) saturate(80%)', opacity: 0.035, transform: 'scale(1.2)' }}
+            />
+            <div className="absolute inset-0" style={{
+              background: 'linear-gradient(to bottom, rgba(10,10,10,0.1) 0%, rgba(10,10,10,0.96) 80%, var(--bg) 100%)',
+            }} />
           </div>
-          <h1 style={{
-            fontFamily: 'Bebas Neue, Syne, sans-serif',
-            fontWeight: 400,
-            fontSize: 'clamp(56px, 9vw, 120px)',
-            lineHeight: 0.9,
-            letterSpacing: '2px',
-            color: '#fff',
-            marginBottom: '24px',
-          }}>
-            Seus ingressos,<br />
-            <span style={{ color: '#C5FF00' }}>do jeito certo.</span>
-          </h1>
-          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '1.15rem', lineHeight: 1.6, maxWidth: '520px', margin: '0 auto 40px' }}>
-            Compre ingressos para os melhores eventos do Brasil com segurança e sem complicação.
-          </p>
-          {/* Search */}
-          <div className="flex flex-col sm:flex-row gap-3 max-w-2xl mx-auto">
-            <input
-              type="text"
-              placeholder="Buscar evento, artista ou local..."
-              value={search}
-              onChange={(ev) => setSearch(ev.target.value)}
-              className="input flex-1"
-              style={{ fontSize: '0.95rem', padding: '14px 20px' }}
-            />
-            <input
-              type="text"
-              placeholder="Cidade"
-              value={city}
-              onChange={(ev) => setCity(ev.target.value)}
-              className="input sm:w-40"
-              style={{ fontSize: '0.95rem', padding: '14px 16px' }}
-            />
+        )}
+
+        {/* Linhas de grade diagonais — substitui aurora */}
+        <div className="absolute inset-0 pointer-events-none" aria-hidden="true" style={{ zIndex: 0, opacity: 0.04 }}>
+          <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="grid" width="80" height="80" patternUnits="userSpaceOnUse">
+                <path d="M 80 0 L 0 0 0 80" fill="none" stroke="#FFFFFF" strokeWidth="0.5"/>
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid)" />
+          </svg>
+        </div>
+
+        {/* ── Conteúdo do hero ───────────────────────── */}
+        <div
+          className="relative flex-1 flex flex-col justify-start max-w-7xl mx-auto w-full px-6 pb-12 pt-8"
+          style={{ zIndex: 2 }}
+        >
+          {/* Stamp — pílula com borda, igual às artes */}
+          <div className="hero-stamp stamp mb-6">
+            Plataforma Oficial de Ingressos
+            <span style={{
+              fontFamily: '"Space Mono", monospace',
+              fontSize: '0.58rem',
+              color: 'var(--t3)',
+              marginLeft: 16,
+            }}>
+              {!loading && events.length > 0 ? `${events.length} eventos` : '—'}
+            </span>
+          </div>
+
+          {/* Título — bold geométrico, identidade das artes */}
+          <div className="overflow-hidden" style={{ marginBottom: 28 }}>
+            <div
+              className="hero-line1"
+              style={{
+                fontFamily: '"Clash Display", sans-serif',
+                fontWeight: 800,
+                fontSize: 'clamp(2.6rem, 7vw, 5.2rem)',
+                lineHeight: 1.02,
+                letterSpacing: '-0.02em',
+                color: 'var(--t1)',
+              }}
+            >
+              Seus ingressos,
+            </div>
+            <div
+              className="hero-line2"
+              style={{
+                fontFamily: '"Clash Display", sans-serif',
+                fontWeight: 800,
+                fontSize: 'clamp(2.6rem, 7vw, 5.2rem)',
+                lineHeight: 1.02,
+                letterSpacing: '-0.02em',
+                color: 'var(--neon)',
+              }}
+            >
+              do jeito certo.
+            </div>
+            <div
+              className="hero-line3"
+              style={{
+                fontFamily: '"Inter", sans-serif',
+                fontWeight: 500,
+                fontSize: 'clamp(0.95rem, 2vw, 1.15rem)',
+                lineHeight: 1.4,
+                letterSpacing: 0,
+                color: 'var(--t2)',
+                textTransform: 'none',
+                marginTop: 14,
+              }}
+            >
+              Shows · Festas · Rodeios · Festivais · Teatro
+            </div>
+          </div>
+
+          {/* Linha horizontal */}
+          <div style={{ height: '1px', background: 'var(--bd-md)', marginBottom: 24 }} aria-hidden="true" />
+
+          {/* Busca + números na mesma linha */}
+          <div className="flex flex-col lg:flex-row items-start lg:items-center gap-6">
+
+            {/* Search bar brutalista */}
+            <div
+              className="hero-search flex items-center gap-0 flex-1 w-full max-w-2xl"
+              style={{
+                background: 'var(--s1)',
+                border: '1px solid var(--bd-md)',
+                borderRadius: 4,
+              }}
+            >
+              <div className="relative flex-1">
+                <svg className="absolute left-4 top-1/2 -translate-y-1/2" width="14" height="14" viewBox="0 0 24 24"
+                  fill="none" style={{ color: 'var(--t3)' }} aria-hidden="true">
+                  <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8"/>
+                  <path d="m16.5 16.5 3.5 3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                </svg>
+                <input
+                  type="search"
+                  placeholder="Buscar evento, artista ou local..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3.5 text-sm"
+                  style={{
+                    background: 'transparent', border: 'none', outline: 'none',
+                    color: 'var(--t1)',
+                    fontFamily: '"Inter", sans-serif',
+                  }}
+                />
+              </div>
+              <div style={{ width: '1px', height: '32px', background: 'var(--bd)', flexShrink: 0 }} aria-hidden="true" />
+              <input
+                type="text"
+                placeholder="Cidade"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                className="w-32 px-4 py-3.5 text-sm"
+                style={{
+                  background: 'transparent', border: 'none', outline: 'none',
+                  color: 'var(--t1)',
+                  fontFamily: '"Inter", sans-serif',
+                }}
+              />
+            </div>
+
+            {/* Números estilo poster */}
           </div>
         </div>
-        {/* Linha separadora com glow */}
-        <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(197,255,0,0.3), transparent)' }} />
+
+        {/* Marquee de eventos */}
+        {!loading && events.length > 3 && (
+          <div className="marquee relative" style={{
+            zIndex: 2,
+            borderTop: '1px solid var(--bd)',
+            background: 'rgba(10,10,13,0.85)',
+            padding: '10px 0',
+          }}>
+            <div className="marquee-track">
+              {[...events, ...events].map((e, i) => (
+                <span key={i} className="inline-flex items-center gap-3 px-6">
+                  <span style={{
+                    fontFamily: '"Space Mono", monospace',
+                    fontSize: '0.55rem',
+                    color: 'var(--neon)',
+                    letterSpacing: '0.1em',
+                  }} aria-hidden="true">
+                    ◆
+                  </span>
+                  <span style={{
+                    fontFamily: '"Clash Display", sans-serif',
+                    fontWeight: 700,
+                    fontSize: '0.82rem',
+                    letterSpacing: '0.06em',
+                    textTransform: 'uppercase',
+                    color: 'var(--t1)',
+                    whiteSpace: 'nowrap',
+                  }}>
+                    {e.title}
+                  </span>
+                  {e.city && (
+                    <span style={{
+                      fontFamily: '"Space Mono", monospace',
+                      fontSize: '0.6rem',
+                      color: 'var(--t3)',
+                      whiteSpace: 'nowrap',
+                    }}>
+                      {e.city}
+                    </span>
+                  )}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-10">
-        {/* Chips de gênero (categorias reais do G-ticket) */}
-        {genres.length > 0 && (
-          <section className="mb-10">
-            <p className="eyebrow mb-4">Explorar por categoria</p>
-            <div className="flex gap-2 flex-wrap">
-              {genres.map((g) => (
-                <button
-                  key={g.codigo}
-                  onClick={() => applyGenre(g.descricao)}
-                  className="text-sm font-medium transition-all"
-                  style={{
-                    padding: '7px 16px', borderRadius: '100px',
-                    border: '1px solid ' + (genre === g.descricao ? 'rgba(197,255,0,0.5)' : 'rgba(255,255,255,0.1)'),
-                    background: genre === g.descricao ? 'rgba(197,255,0,0.12)' : 'rgba(255,255,255,0.04)',
-                    color: genre === g.descricao ? '#C5FF00' : 'rgba(255,255,255,0.65)',
-                  }}
-                >
-                  {g.descricao}
-                </button>
-              ))}
-            </div>
-          </section>
-        )}
+      {/* ══════════════════════════════════════════════
+          CONTEÚDO PRINCIPAL
+          ══════════════════════════════════════════════ */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
 
-        {/* Featured */}
+
+        {/* ── Destaques ─────────────────────────────── */}
         {featured.length > 0 && !isFiltering && (
-          <section className="mb-12">
-            <div className="flex items-center gap-3 mb-6">
-              <p className="eyebrow">Em Destaque</p>
+          <section className="mb-16" aria-label="Eventos em destaque">
+            <div className="section-hd flex items-center gap-4 mb-7">
+              <span className="stamp">Em Destaque</span>
+              <div style={{ flex: 1, height: '1px', background: 'var(--bd)' }} aria-hidden="true" />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {featured.slice(0, 3).map((e) => (
-                <EventCard key={e.id} event={e} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {featured.slice(0, 5).map((e, i) => (
+                <div key={e.id} className="card-scroll-wrap">
+                  <EventCard event={e} index={i} />
+                </div>
               ))}
             </div>
           </section>
         )}
 
-        {/* All Events */}
-        <section>
-          <div className="flex items-baseline gap-3 mb-6">
-            <p className="eyebrow">{isFiltering ? 'Resultados' : 'Todos os Eventos'}</p>
+        {/* ── Todos os eventos ──────────────────────── */}
+        <section aria-label={isFiltering ? 'Resultados' : 'Todos os Eventos'}>
+          <div className="section-hd flex items-center gap-4 mb-7">
+            <span className="stamp">{isFiltering ? 'Resultados' : 'Todos os Eventos'}</span>
             {!loading && (
-              <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.85rem' }}>{filtered.length} eventos</span>
+              <span style={{
+                fontFamily: '"Space Mono", monospace',
+                fontSize: '0.62rem',
+                color: 'var(--t3)',
+              }}>
+                {filtered.length}
+              </span>
             )}
+            <div style={{ flex: 1, height: '1px', background: 'var(--bd)' }} aria-hidden="true" />
           </div>
 
           {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="rounded-2xl h-72 animate-pulse" style={{ background: '#131313' }} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="skeleton" style={{ height: 160, borderRadius: 8 }} />
               ))}
             </div>
           ) : filtered.length === 0 ? (
-            <div className="text-center py-20" style={{ color: 'rgba(255,255,255,0.3)' }}>
-              <p className="text-5xl mb-4">🎟️</p>
-              <p className="text-lg">Nenhum evento encontrado</p>
+            <div className="text-center py-24" style={{
+              border: '1px solid var(--bd)',
+              borderRadius: 8,
+              background: 'var(--s1)',
+            }}>
+              <div className="w-14 h-14 mx-auto mb-5 flex items-center justify-center"
+                style={{ border: '1px solid var(--bd-md)', borderRadius: 8 }}>
+                <IconTicket size={26} style={{ color: 'var(--t3)' }} />
+              </div>
+              <p style={{
+                fontFamily: '"Clash Display", sans-serif',
+                fontWeight: 700,
+                fontSize: '1.2rem',
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+                color: 'var(--t2)',
+              }}>
+                Nenhum evento encontrado
+              </p>
+              <p style={{ color: 'var(--t3)', fontSize: '0.85rem', marginTop: 6, fontFamily: '"Space Mono", monospace' }}>
+                Tente outros termos ou limpe os filtros
+              </p>
               {isFiltering && (
-                <button onClick={() => { setSearch(''); setCity(''); setGenre(''); loadEvents(); }} className="btn-secondary mt-6">
+                <button
+                  onClick={() => { setSearch(''); setCity(''); setGenre(''); loadEvents(); }}
+                  className="btn-secondary mt-6"
+                  style={{ padding: '10px 28px', fontSize: '0.82rem' }}
+                >
                   Limpar filtros
                 </button>
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {filtered.map((e) => (
-                <EventCard key={e.id} event={e} />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {filtered.map((e, i) => (
+                  <div key={e.id} className="card-scroll-wrap">
+                    <EventCard event={e} index={i} />
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </section>
+
+        {/* ── CTA Final — estilo ingresso picotado ──── */}
+        {!loading && events.length > 0 && (
+          <div className="mt-24 ticket-edge" style={{ overflow: 'visible' }}>
+            <div
+              className="cta-inner"
+              style={{
+                border: '1px solid var(--bd-md)',
+                borderRadius: 8,
+                padding: '48px 40px',
+                textAlign: 'center',
+                position: 'relative',
+                overflow: 'hidden',
+                background: 'var(--s1)',
+              }}
+            >
+              {/* Linha neon no topo do CTA */}
+              <div aria-hidden="true" style={{
+                position: 'absolute', top: 0, left: 0, right: 0,
+                height: '2px',
+                background: 'linear-gradient(90deg, transparent, var(--neon), var(--ember), transparent)',
+              }} />
+
+              {/* Grade de fundo */}
+              <div aria-hidden="true" className="absolute inset-0" style={{
+                backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px)',
+                backgroundSize: '32px 32px',
+              }} />
+
+              <div className="relative">
+                <div className="stamp mb-4" style={{ justifyContent: 'center' }}>
+                  Acesso total
+                </div>
+                <h2 style={{
+                  fontFamily: '"Clash Display", sans-serif',
+                  fontWeight: 800,
+                  fontSize: 'clamp(1.7rem, 3.6vw, 2.6rem)',
+                  letterSpacing: '-0.02em',
+                  textTransform: 'none',
+                  color: 'var(--t1)',
+                  lineHeight: 1.08,
+                  marginBottom: 12,
+                }}>
+                  Crie sua conta e compre<br />
+                  <span style={{ color: 'var(--neon)' }}>com mais facilidade</span>
+                </h2>
+                <p style={{
+                  color: 'var(--t2)',
+                  fontSize: '0.9rem',
+                  marginBottom: 28,
+                  fontFamily: '"Inter", sans-serif',
+                }}>
+                  PIX, cartão e parcelamento. Ingresso no e-mail em minutos.
+                </p>
+                <a href="/cadastro" className="btn-primary" style={{ padding: '13px 40px', fontSize: '0.9rem' }}>
+                  Criar conta grátis
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

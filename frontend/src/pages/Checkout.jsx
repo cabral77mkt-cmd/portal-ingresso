@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { gticket, validarCPF } from '../services/gticket.js';
+import { IconBolt, IconCard, IconReceipt, IconQr, IconCheck, IconClock, IconCalendar } from '../components/Icons.jsx';
 
 // Detecta bandeira pelo número do cartão
 function detectBrand(num) {
@@ -27,7 +28,6 @@ export default function Checkout() {
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState('');
   const [pixData, setPixData] = useState(null);
-  const [boletoData, setBoletoData] = useState(null);
 
   // Config de pagamento do evento (define gateway e métodos aceitos)
   const [payConfig, setPayConfig] = useState(null);
@@ -80,7 +80,6 @@ export default function Checkout() {
         const aceitaCartao = cfg?.eve_ocultar_cartao !== 'S';
         if (aceitaPix) setPaymentMethod('PIX');
         else if (aceitaCartao) setPaymentMethod('CARTÃO');
-        else if (cfg?.eve_aceita_boleto === 'S') setPaymentMethod('BOLETO');
       })
       .catch(() => {});
   }, []);
@@ -91,7 +90,7 @@ export default function Checkout() {
     const methods = [];
     if (cfg.eve_aceita_pix === 'S' || cfg.eve_aceita_pix_aarin === 'S' || !payConfig) methods.push('PIX');
     if (cfg.eve_ocultar_cartao !== 'S') methods.push('CARTÃO');
-    if (cfg.eve_aceita_boleto === 'S') methods.push('BOLETO');
+    // Boleto desativado: não vendemos no boleto.
     return methods.length ? methods : ['PIX', 'CARTÃO'];
   }, [payConfig]);
 
@@ -361,6 +360,9 @@ export default function Checkout() {
       forma_pagto: formaPagto,
       data_vencimento: vencimento,
       hash: isCard ? cardToken : null,
+      // Campos do exemplo oficial da doc (Pag-seguro transparente PIX)
+      valor_seguro: '0',
+      pagar_antigo: '',
     };
 
     const dadosComprador = {
@@ -415,19 +417,34 @@ export default function Checkout() {
       const pagId = result?.pag_id || result?.pgto_id || '';
 
       if (isPix) {
-        const code = result?.pgto_codigo || result?.qr_code || result?.pix_codigo;
+        // 1) Tenta pegar o código já na resposta do checkout
+        let code = result?.pgto_codigo || result?.qr_code || result?.pix_codigo || '';
+        let qr   = result?.pgto_link || result?.qr_code_link_img || result?.qr_code_base64 || '';
+
+        // 2) Fluxo PagSeguro/PagBank: o pedido nasce "em análise" (EA) e o QR do PIX é
+        //    gerado logo em seguida. Ele NÃO vem na resposta do checkout — vem na consulta
+        //    de pagamento (pagamento.asp gmet=1). Buscamos com algumas tentativas.
+        if (!code && pagId && result?.status !== 'CA') {
+          for (let i = 0; i < 5 && !code; i++) {
+            await new Promise((r) => setTimeout(r, i === 0 ? 800 : 2000));
+            try {
+              const pay = await gticket.payment.status(pagId);
+              code = pay?.qr_code || pay?.pgto_codigo || pay?.pix_codigo || '';
+              qr   = pay?.qr_code_link_img || pay?.qr_code_base64 || pay?.pgto_link || qr;
+              // Só desiste se o gateway cancelou E não há QR pra pagar
+              if (!code && pay?.status === 'CA') break;
+            } catch { /* tenta de novo */ }
+          }
+        }
+
         if (code) {
-          setPixData({ code, qr: result.pgto_link || result.qr_code_link_img || result.qr_code_base64, pagId });
+          setPixData({ code, qr, pagId });
         } else {
           const msg = result?.status === 'CA'
             ? 'Pagamento PIX cancelado pelo gateway. Tente novamente ou use outro método.'
             : result?.statusMsg || result?.msg || 'Não foi possível gerar o PIX. Tente novamente.';
           setSubmitError(msg);
         }
-      } else if (isBoleto) {
-        const link = result?.link_boleto || result?.pgto_link || result?.boleto_url;
-        if (link) setBoletoData({ link, pagId });
-        else setSubmitError(result?.statusMsg || result?.msg || 'Não foi possível gerar o boleto.');
       } else {
         if (result?.status === 'PG' || result?.statusId === '00' || result?.status === 'EA' || pagId) {
           navigate(`/pedido/${pagId}`);
@@ -471,9 +488,11 @@ export default function Checkout() {
     return (
       <div className="max-w-lg mx-auto px-4 py-12 text-center">
         <div className="card p-8">
-          <div className="text-5xl mb-4">📱</div>
-          <h2 className="text-2xl font-bold text-white mb-2">Pague via PIX</h2>
-          <p className="text-gray-400 mb-6">Escaneie o QR Code ou copie o código</p>
+          <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+            <IconQr size={32} />
+          </div>
+          <h2 className="text-2xl font-bold text-paper mb-2">Pague via PIX</h2>
+          <p className="text-muted mb-6">Escaneie o QR Code ou copie o código</p>
           {pixData.qr && (
             <img src={pixData.qr} alt="QR Code PIX" className="mx-auto mb-4 rounded-xl" />
           )}
@@ -496,25 +515,6 @@ export default function Checkout() {
     );
   }
 
-  if (boletoData) {
-    return (
-      <div className="max-w-lg mx-auto px-4 py-12 text-center">
-        <div className="card p-8">
-          <div className="text-5xl mb-4">🧾</div>
-          <h2 className="text-2xl font-bold text-white mb-2">Boleto gerado</h2>
-          <p className="text-gray-400 mb-6">Pague o boleto até o vencimento para confirmar a compra.</p>
-          <a href={boletoData.link} target="_blank" rel="noopener noreferrer" className="btn-primary w-full inline-block">
-            Abrir / Imprimir Boleto
-          </a>
-          {boletoData.pagId && (
-            <Link to={`/pedido/${boletoData.pagId}`} className="btn-secondary w-full mt-3 inline-block">
-              Acompanhar pedido
-            </Link>
-          )}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
@@ -563,44 +563,54 @@ export default function Checkout() {
           {/* Dados do Comprador — aparece logado (pré-preenchido e editável) */}
           {loggedUser && <div className="card p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-white font-semibold">Dados do Comprador</h2>
-              <span className="text-green-400 text-sm font-medium">✅ {loggedUser.nome || loggedUser.usu_nome}</span>
+              <h2 className="text-paper font-semibold">Dados do Comprador</h2>
+              <span className="text-primary text-sm font-medium flex items-center gap-1.5"><IconCheck size={14} /> {loggedUser.nome || loggedUser.usu_nome}</span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <input placeholder="Nome completo" value={form.nome} onChange={(e) => setField('nome', e.target.value)} className="input" />
+              <div className="md:col-span-2">
+                <label htmlFor="ck-nome" className="block text-faint text-xs mb-1.5">Nome completo *</label>
+                <input id="ck-nome" autoComplete="name" placeholder="Seu nome completo" value={form.nome} onChange={(e) => setField('nome', e.target.value)} className="input" />
                 {errors.nome && <p className="text-red-400 text-xs mt-1">{errors.nome}</p>}
               </div>
               <div>
-                <input placeholder="Email" type="email" value={form.email} onChange={(e) => setField('email', e.target.value)} className="input" />
+                <label htmlFor="ck-email" className="block text-faint text-xs mb-1.5">E-mail *</label>
+                <input id="ck-email" type="email" autoComplete="email" inputMode="email" placeholder="voce@email.com" value={form.email} onChange={(e) => setField('email', e.target.value)} className="input" />
                 {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email}</p>}
               </div>
               <div>
-                <input placeholder="CPF (000.000.000-00)" value={form.cpf} onChange={(e) => setField('cpf', e.target.value)} className="input" maxLength={14} />
+                <label htmlFor="ck-cpf" className="block text-faint text-xs mb-1.5">CPF *</label>
+                <input id="ck-cpf" inputMode="numeric" placeholder="000.000.000-00" value={form.cpf} onChange={(e) => setField('cpf', e.target.value)} className="input" maxLength={14} />
                 {errors.cpf && <p className="text-red-400 text-xs mt-1">{errors.cpf}</p>}
               </div>
               <div>
-                <input placeholder="Telefone (DDD + número)" value={form.telefone} onChange={(e) => setField('telefone', e.target.value)} className="input" />
+                <label htmlFor="ck-tel" className="block text-faint text-xs mb-1.5">Telefone (DDD + número) *</label>
+                <input id="ck-tel" type="tel" autoComplete="tel" inputMode="tel" placeholder="(00) 90000-0000" value={form.telefone} onChange={(e) => setField('telefone', e.target.value)} className="input" />
                 {errors.telefone && <p className="text-red-400 text-xs mt-1">{errors.telefone}</p>}
               </div>
               <div>
-                <input placeholder="Data de nascimento (DD/MM/AAAA)" value={form.dataNasc} onChange={(e) => setField('dataNasc', e.target.value)} className="input" />
+                <label htmlFor="ck-nasc" className="block text-faint text-xs mb-1.5">Data de nascimento *</label>
+                <input id="ck-nasc" inputMode="numeric" placeholder="DD/MM/AAAA" value={form.dataNasc} onChange={(e) => setField('dataNasc', e.target.value)} className="input" />
                 {errors.dataNasc && <p className="text-red-400 text-xs mt-1">{errors.dataNasc}</p>}
               </div>
               <div>
-                <input placeholder="CEP" value={form.cep} onChange={(e) => setField('cep', e.target.value)} className="input" />
+                <label htmlFor="ck-cep" className="block text-faint text-xs mb-1.5">CEP</label>
+                <input id="ck-cep" inputMode="numeric" autoComplete="postal-code" placeholder="00000-000" value={form.cep} onChange={(e) => setField('cep', e.target.value)} className="input" />
               </div>
               <div>
-                <input placeholder="Endereço" value={form.logradouro} onChange={(e) => setField('logradouro', e.target.value)} className="input" />
+                <label htmlFor="ck-end" className="block text-faint text-xs mb-1.5">Endereço</label>
+                <input id="ck-end" autoComplete="address-line1" placeholder="Rua, avenida..." value={form.logradouro} onChange={(e) => setField('logradouro', e.target.value)} className="input" />
               </div>
               <div>
-                <input placeholder="Número" value={form.numero} onChange={(e) => setField('numero', e.target.value)} className="input" />
+                <label htmlFor="ck-num" className="block text-faint text-xs mb-1.5">Número</label>
+                <input id="ck-num" inputMode="numeric" placeholder="Nº" value={form.numero} onChange={(e) => setField('numero', e.target.value)} className="input" />
               </div>
               <div>
-                <input placeholder="Cidade" value={form.cidade} onChange={(e) => setField('cidade', e.target.value)} className="input" />
+                <label htmlFor="ck-cidade" className="block text-faint text-xs mb-1.5">Cidade</label>
+                <input id="ck-cidade" autoComplete="address-level2" placeholder="Cidade" value={form.cidade} onChange={(e) => setField('cidade', e.target.value)} className="input" />
               </div>
               <div>
-                <input placeholder="UF (ex: SP)" value={form.uf} onChange={(e) => setField('uf', e.target.value.toUpperCase())} className="input" maxLength={2} />
+                <label htmlFor="ck-uf" className="block text-faint text-xs mb-1.5">UF</label>
+                <input id="ck-uf" placeholder="SP" value={form.uf} onChange={(e) => setField('uf', e.target.value.toUpperCase())} className="input" maxLength={2} />
               </div>
             </div>
           </div>}
@@ -614,11 +624,13 @@ export default function Checkout() {
                   <button
                     key={m} type="button"
                     onClick={() => setPaymentMethod(m)}
-                    className={`flex-1 py-3 rounded-xl font-semibold transition-colors ${
-                      paymentMethod === m ? 'bg-primary text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                    aria-pressed={paymentMethod === m}
+                    className={`flex-1 py-3 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 ${
+                      paymentMethod === m ? 'bg-primary text-black' : 'bg-white/5 text-muted hover:bg-white/10'
                     }`}
                   >
-                    {m === 'PIX' ? '⚡ PIX' : m === 'BOLETO' ? '🧾 Boleto' : '💳 Cartão'}
+                    {m === 'PIX' ? <IconBolt /> : <IconCard />}
+                    {m === 'PIX' ? 'PIX' : 'Cartão'}
                   </button>
                 ))}
               </div>
@@ -641,22 +653,14 @@ export default function Checkout() {
                   )}
                 </div>
                 {couponError && <p className="text-red-400 text-xs mt-1">{couponError}</p>}
-                {couponData && <p className="text-green-400 text-xs mt-1">✅ Desconto aplicado: {couponData.exibir || `R$ ${couponData.valor_desconto}`}</p>}
+                {couponData && <p className="text-primary text-xs mt-1 flex items-center gap-1.5"><IconCheck size={13} /> Desconto aplicado: {couponData.exibir || `R$ ${couponData.valor_desconto}`}</p>}
               </div>
 
               {paymentMethod === 'PIX' && (
-                <div className="bg-gray-800/60 rounded-xl p-4 space-y-2 text-sm text-gray-300">
-                  <p>⚡ Aprovação instantânea</p>
-                  <p>✅ Sem taxas adicionais</p>
-                  <p>📱 QR Code gerado após confirmação</p>
-                </div>
-              )}
-
-              {paymentMethod === 'BOLETO' && (
-                <div className="bg-gray-800/60 rounded-xl p-4 space-y-2 text-sm text-gray-300">
-                  <p>🧾 Boleto bancário</p>
-                  <p>⏱️ Compensação em até 2 dias úteis</p>
-                  <p>📅 Pague até o vencimento</p>
+                <div className="bg-white/[0.03] border border-ink-line rounded-xl p-4 space-y-2.5 text-sm text-muted">
+                  <p className="flex items-center gap-2.5"><IconBolt className="text-primary" /> Aprovação instantânea</p>
+                  <p className="flex items-center gap-2.5"><IconCheck className="text-primary" /> Sem taxas adicionais</p>
+                  <p className="flex items-center gap-2.5"><IconQr className="text-primary" /> QR Code gerado após a confirmação</p>
                 </div>
               )}
 

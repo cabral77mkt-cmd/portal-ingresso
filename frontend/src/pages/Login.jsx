@@ -47,10 +47,10 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <Link to="/" className="text-3xl font-bold text-primary tracking-tight">
-            tick<span className="text-white">7</span>
+          <Link to="/" className="inline-flex items-center justify-center" style={{ textDecoration: 'none' }}>
+            <img src="/logo.png" alt="Portal do Ingresso" style={{ height: 32, width: 'auto' }} />
           </Link>
-          <p className="text-gray-400 mt-2">Acesse sua conta</p>
+          <p className="text-muted mt-3">Acesse sua conta</p>
         </div>
 
         <div className="card p-8">

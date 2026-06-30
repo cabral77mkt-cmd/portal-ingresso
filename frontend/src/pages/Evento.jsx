@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { gticket } from '../services/gticket.js';
+import { IconCalendar, IconPin, IconSeat, IconTicket } from '../components/Icons.jsx';
 
 export default function Evento() {
   const { gticketId } = useParams();
@@ -220,8 +221,10 @@ export default function Evento() {
 
   if (!event) {
     return (
-      <div className="text-center py-20 text-gray-500">
-        <p className="text-5xl mb-4">😕</p>
+      <div className="text-center py-20 text-faint">
+        <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-white/[0.05] flex items-center justify-center">
+          <IconTicket size={30} />
+        </div>
         <p>Evento não encontrado</p>
       </div>
     );
@@ -244,13 +247,18 @@ export default function Evento() {
             <h1 className="text-3xl font-bold text-white mt-1">{event.title}</h1>
           </div>
 
-          <div className="space-y-2 text-gray-400">
-            <p className="flex items-center gap-2">📅 {formatDate(event.date)}</p>
-            <p className="flex items-center gap-2">📍 {event.location} — {event.city}/{event.state}</p>
+          <div className="space-y-2 text-muted">
+            {formatDate(event.date) && (
+              <p className="flex items-center gap-2.5"><IconCalendar className="text-primary" /> {formatDate(event.date)}</p>
+            )}
+            <p className="flex items-center gap-2.5"><IconPin className="text-primary" /> {event.location} — {event.city}/{event.state}</p>
             {event.classificacao !== '' && event.classificacao != null && (
-              <p className="flex items-center gap-2">
-                🔞 Classificação:{' '}
-                <span className="font-semibold text-white">
+              <p className="flex items-center gap-2.5">
+                <span className="inline-flex items-center justify-center w-4 h-4 rounded-[4px] border border-current text-[0.6rem] font-bold shrink-0">
+                  {Number(event.classificacao) === 0 ? 'L' : event.classificacao}
+                </span>
+                Classificação:{' '}
+                <span className="font-semibold text-paper">
                   {Number(event.classificacao) === 0 ? 'Livre' : `${event.classificacao} anos`}
                 </span>
               </p>
@@ -327,26 +335,30 @@ export default function Evento() {
                           {isMeia && (
                             <p className="text-yellow-500 text-xs mt-1">⚠️ Necessário documento comprobatório</p>
                           )}
-                          {t.mesa === 'S' && <p className="text-blue-400 text-xs mt-1">🪑 Escolha de mesa</p>}
-                          {Number(t.mapa_id) > 0 && <p className="text-blue-400 text-xs mt-1">📍 Lugar marcado</p>}
+                          {t.mesa === 'S' && <p className="text-primary text-xs mt-1 flex items-center gap-1.5"><IconSeat size={13} /> Escolha de mesa</p>}
+                          {Number(t.mapa_id) > 0 && <p className="text-primary text-xs mt-1 flex items-center gap-1.5"><IconPin size={13} /> Lugar marcado</p>}
                           {qtdMin > 1 && <p className="text-gray-500 text-xs">Mínimo {qtdMin} por compra</p>}
                           {available <= 10 && available > 0 && (
                             <p className="text-orange-400 text-xs">Restam {available}</p>
                           )}
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
                           <button
+                            type="button"
+                            aria-label="Diminuir quantidade"
                             onClick={() => setQty(id, qty - 1, t)}
                             disabled={qty === 0}
-                            className="w-8 h-8 rounded-full bg-gray-700 hover:bg-gray-600 disabled:opacity-30 flex items-center justify-center font-bold"
+                            className="w-11 h-11 rounded-full bg-white/10 hover:bg-white/15 disabled:opacity-30 flex items-center justify-center font-bold text-lg text-white transition-colors"
                           >
                             −
                           </button>
-                          <span className="w-6 text-center font-bold text-white">{qty}</span>
+                          <span className="w-7 text-center font-bold text-white tabular-nums">{qty}</span>
                           <button
+                            type="button"
+                            aria-label="Aumentar quantidade"
                             onClick={() => setQty(id, Math.max(qty + 1, qty === 0 && qtdMin > 1 ? qtdMin : qty + 1), t)}
                             disabled={available === 0 || maxReached}
-                            className="w-8 h-8 rounded-full bg-primary hover:bg-violet-700 disabled:opacity-30 flex items-center justify-center font-bold"
+                            className="w-11 h-11 rounded-full bg-primary hover:brightness-95 disabled:opacity-30 flex items-center justify-center font-bold text-lg text-black transition-all"
                           >
                             +
                           </button>

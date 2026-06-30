@@ -14,6 +14,10 @@ const Login        = lazy(() => import('./pages/Login.jsx'));
 const Cadastro     = lazy(() => import('./pages/Cadastro.jsx'));
 const MinhaConta   = lazy(() => import('./pages/MinhaConta.jsx'));
 const RecuperaSenha = lazy(() => import('./pages/RecuperaSenha.jsx'));
+const QuemSomos    = lazy(() => import('./pages/QuemSomos.jsx'));
+const Duvidas      = lazy(() => import('./pages/Duvidas.jsx'));
+const Politicas    = lazy(() => import('./pages/Politicas.jsx'));
+const FaleConosco  = lazy(() => import('./pages/FaleConosco.jsx'));
 
 function PageLoader() {
   return (
@@ -42,6 +46,10 @@ export default function App() {
             <Route path="/cadastro"            element={<Cadastro />} />
             <Route path="/minha-conta"         element={<MinhaConta />} />
             <Route path="/recupera-senha"      element={<RecuperaSenha />} />
+            <Route path="/quem-somos"          element={<QuemSomos />} />
+            <Route path="/duvidas"             element={<Duvidas />} />
+            <Route path="/politicas"           element={<Politicas />} />
+            <Route path="/fale-conosco"        element={<FaleConosco />} />
           </Routes>
         </Suspense>
       </main>

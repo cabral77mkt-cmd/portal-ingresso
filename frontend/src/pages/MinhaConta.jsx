@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { gticket } from '../services/gticket.js';
+import { IconTicket } from '../components/Icons.jsx';
 
 // Status do G-ticket
 const STATUS_LABEL = {
@@ -68,7 +69,7 @@ export default function MinhaConta() {
       {courtesy.length > 0 && (
         <section className="mb-8">
           <h2 className="text-lg font-bold text-white mb-4">
-            🎁 Cortesias disponíveis
+            Cortesias disponíveis
             <span className="text-gray-500 font-normal text-sm ml-2">({courtesy.length})</span>
           </h2>
           <div className="space-y-3">
@@ -98,8 +99,10 @@ export default function MinhaConta() {
           </div>
         ) : orders.length === 0 ? (
           <div className="card p-10 text-center">
-            <p className="text-4xl mb-3">🎟️</p>
-            <p className="text-gray-400">Você ainda não comprou nenhum ingresso.</p>
+            <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-white/[0.06] text-faint flex items-center justify-center">
+              <IconTicket size={26} />
+            </div>
+            <p className="text-muted">Você ainda não comprou nenhum ingresso.</p>
             <Link to="/" className="btn-primary mt-4 inline-block">
               Ver Eventos
             </Link>
