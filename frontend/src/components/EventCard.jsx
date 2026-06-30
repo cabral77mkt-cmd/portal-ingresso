@@ -138,6 +138,8 @@ const EventCard = memo(function EventCard({ event, index = 0, variant = 'default
             <img
               src={event.image_url}
               alt={event.title}
+              width="680"
+              height="480"
               loading="lazy"
               decoding="async"
               className="absolute inset-0 w-full h-full object-cover"

@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 export default function Header() {
   const navigate  = useNavigate();
@@ -7,6 +7,12 @@ export default function Header() {
   const [user,       setUser]       = useState(null);
   const [scrolled,   setScrolled]   = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const drawerRef = useRef(null);
+
+  // A11y: quando fechado, o drawer não deve conter elementos focáveis (inert)
+  useEffect(() => {
+    if (drawerRef.current) drawerRef.current.inert = !mobileOpen;
+  }, [mobileOpen]);
 
   useEffect(() => {
     function syncAuth() {
@@ -69,7 +75,7 @@ export default function Header() {
 
           {/* ── Logo brutalista ──────────────────────── */}
           <Link to="/" className="flex items-center shrink-0 group" style={{ textDecoration: 'none' }}>
-            <img src="/logo.png" alt="Portal do Ingresso" style={{ height: 30, width: 'auto' }} />
+            <img src="/logo.png" alt="Portal do Ingresso" width="110" height="30" decoding="async" fetchpriority="high" style={{ height: 30, width: 'auto' }} />
           </Link>
 
           {/* ── Desktop nav ─────────────────────────── */}
@@ -174,6 +180,7 @@ export default function Header() {
 
       {/* ── Mobile drawer (brutalista) ───────────────── */}
       <div
+        ref={drawerRef}
         id="mobile-drawer"
         role="dialog"
         aria-modal="true"

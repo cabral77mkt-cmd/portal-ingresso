@@ -60,11 +60,10 @@ export default function Home() {
       gsap.utils.toArray('.card-scroll-wrap').forEach((el, i) => {
         gsap.from(el, {
           scrollTrigger: { trigger: el, start: 'top 92%', toggleActions: 'play none none none' },
-          y: 60, opacity: 0,
-          duration: 0.75,
+          y: 40, opacity: 0,
+          duration: 0.7,
           delay: (i % 3) * 0.06,
-          ease: 'power4.out',
-          clearProps: 'transform',
+          ease: 'power3.out',
         });
       });
 
@@ -152,19 +151,17 @@ export default function Home() {
         className="relative overflow-hidden"
         style={{ minHeight: 'auto', display: 'flex', flexDirection: 'column' }}
       >
-        {/* Fundo suave do poster do evento */}
-        {!loading && events.length > 0 && events[0].image_url && (
-          <div className="absolute inset-0 pointer-events-none" aria-hidden="true" style={{ zIndex: 0 }}>
-            <img
-              src={events[0].image_url} alt=""
-              className="w-full h-full object-cover"
-              style={{ filter: 'blur(80px) saturate(80%)', opacity: 0.035, transform: 'scale(1.2)' }}
-            />
-            <div className="absolute inset-0" style={{
-              background: 'linear-gradient(to bottom, rgba(10,10,10,0.1) 0%, rgba(10,10,10,0.96) 80%, var(--bg) 100%)',
-            }} />
-          </div>
-        )}
+        {/* Fundo suave — glow CSS (sem imagem, zero download / LCP rápido) */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          aria-hidden="true"
+          style={{
+            zIndex: 0,
+            background:
+              'radial-gradient(80% 55% at 50% 0%, rgba(164,232,11,0.06) 0%, transparent 60%), ' +
+              'linear-gradient(to bottom, rgba(10,10,10,0.1) 0%, rgba(10,10,10,0.96) 80%, var(--bg) 100%)',
+          }}
+        />
 
         {/* Linhas de grade diagonais — substitui aurora */}
         <div className="absolute inset-0 pointer-events-none" aria-hidden="true" style={{ zIndex: 0, opacity: 0.04 }}>
@@ -294,14 +291,16 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Marquee de eventos */}
-        {!loading && events.length > 3 && (
+        {/* Marquee de eventos — container sempre reserva altura (evita CLS) */}
+        {(loading || events.length > 3) && (
           <div className="marquee relative" style={{
             zIndex: 2,
             borderTop: '1px solid var(--bd)',
             background: 'rgba(10,10,13,0.85)',
             padding: '10px 0',
+            minHeight: 41,
           }}>
+            {!loading && events.length > 3 && (
             <div className="marquee-track">
               {[...events, ...events].map((e, i) => (
                 <span key={i} className="inline-flex items-center gap-3 px-6">
@@ -337,6 +336,7 @@ export default function Home() {
                 </span>
               ))}
             </div>
+            )}
           </div>
         )}
       </div>
@@ -346,6 +346,21 @@ export default function Home() {
           ══════════════════════════════════════════════ */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
 
+
+        {/* ── Destaques (skeleton durante loading — reserva a altura, evita CLS) ── */}
+        {loading && (
+          <section className="mb-16" aria-hidden="true">
+            <div className="section-hd flex items-center gap-4 mb-7">
+              <span className="stamp">Em Destaque</span>
+              <div style={{ flex: 1, height: '1px', background: 'var(--bd)' }} />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="skeleton" style={{ height: 160, borderRadius: 8 }} />
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* ── Destaques ─────────────────────────────── */}
         {featured.length > 0 && !isFiltering && (

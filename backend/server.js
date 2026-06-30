@@ -605,10 +605,21 @@ const distCandidates = [
 ];
 const distPath = distCandidates.find((p) => fs.existsSync(p));
 if (distPath) {
-  app.use(express.static(distPath));
+  // Assets do Vite têm hash no nome → cache longo seguro.
+  // index.html sem cache agressivo pra updates aparecerem na hora.
+  app.use(express.static(distPath, {
+    maxAge: '1y',
+    etag: true,
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('index.html')) {
+        res.setHeader('Cache-Control', 'no-cache');
+      }
+    },
+  }));
   // SPA fallback — todas as rotas não-API devolvem o index.html
   app.get('*', (req, res) => {
     if (!req.path.startsWith('/api')) {
+      res.setHeader('Cache-Control', 'no-cache');
       res.sendFile(path.join(distPath, 'index.html'));
     }
   });
