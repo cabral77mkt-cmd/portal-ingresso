@@ -75,7 +75,7 @@ export default function Header() {
 
           {/* ── Logo brutalista ──────────────────────── */}
           <Link to="/" className="flex items-center shrink-0 group" style={{ textDecoration: 'none' }}>
-            <img src="/logo.png" alt="Portal do Ingresso" width="110" height="30" decoding="async" fetchpriority="high" style={{ height: 30, width: 'auto' }} />
+            <img src="/logo.png" alt="Portal do Ingresso" width="110" height="30" decoding="async" fetchpriority="high" style={{ height: 30, width: 'auto', aspectRatio: '11 / 3' }} />
           </Link>
 
           {/* ── Desktop nav ─────────────────────────── */}

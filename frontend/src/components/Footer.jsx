@@ -32,7 +32,7 @@ export default function Footer() {
           {/* Marca */}
           <div className="col-span-2 md:col-span-5">
             <Link to="/" className="inline-flex items-center" style={{ textDecoration: 'none' }}>
-              <img src="/logo.png" alt="Portal do Ingresso" width="110" height="30" decoding="async" loading="lazy" style={{ height: 30, width: 'auto' }} />
+              <img src="/logo.png" alt="Portal do Ingresso" width="110" height="30" decoding="async" loading="lazy" style={{ height: 30, width: 'auto', aspectRatio: '11 / 3' }} />
             </Link>
             <p
               className="mt-5 max-w-xs leading-relaxed"

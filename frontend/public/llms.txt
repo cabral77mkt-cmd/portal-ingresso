@@ -1,0 +1,18 @@
+# Portal do Ingresso
+
+> Plataforma oficial de venda de ingressos para shows, festas, rodeios, festivais e eventos no Brasil. Compra segura com PIX (aprovação imediata) e cartão de crédito, com o ingresso enviado direto no e-mail.
+
+O Portal do Ingresso é a vitrine e o checkout oficial de eventos, integrado ao sistema G-ticket. O usuário navega pelos eventos, escolhe o setor e a quantidade de ingressos e finaliza a compra pagando com PIX ou cartão. Os eventos são geridos pelos próprios produtores no painel do G-ticket — o site é a loja onde o público compra.
+
+## Páginas
+
+- [Início / Eventos](https://portaldoingresso.net/): eventos em destaque e a lista completa de eventos disponíveis
+- [Quem somos](https://portaldoingresso.net/quem-somos): sobre a plataforma e como ela funciona
+- [Dúvidas frequentes](https://portaldoingresso.net/duvidas): perguntas comuns sobre compra, pagamento, entrega do ingresso e meia-entrada
+- [Nossas políticas](https://portaldoingresso.net/politicas): políticas de compra, cancelamento/reembolso, meia-entrada e privacidade (LGPD)
+- [Fale conosco](https://portaldoingresso.net/fale-conosco): canal de contato para dúvidas e suporte
+
+## Optional
+
+- [Entrar](https://portaldoingresso.net/login): acesso à conta do usuário
+- [Criar conta](https://portaldoingresso.net/cadastro): cadastro gratuito

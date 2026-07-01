@@ -48,7 +48,7 @@ export default function Login() {
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center justify-center" style={{ textDecoration: 'none' }}>
-            <img src="/logo.png" alt="Portal do Ingresso" width="117" height="32" decoding="async" style={{ height: 32, width: 'auto' }} />
+            <img src="/logo.png" alt="Portal do Ingresso" width="117" height="32" decoding="async" style={{ height: 32, width: 'auto', aspectRatio: '11 / 3' }} />
           </Link>
           <p className="text-muted mt-3">Acesse sua conta</p>
         </div>

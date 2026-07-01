@@ -195,33 +195,37 @@ export default function Home() {
 
           {/* Título — bold geométrico, identidade das artes */}
           <div className="overflow-hidden" style={{ marginBottom: 28 }}>
-            <div
-              className="hero-line1"
-              style={{
-                fontFamily: '"Clash Display", sans-serif',
-                fontWeight: 800,
-                fontSize: 'clamp(2.6rem, 7vw, 5.2rem)',
-                lineHeight: 1.02,
-                letterSpacing: '-0.02em',
-                color: 'var(--t1)',
-              }}
-            >
-              Seus ingressos,
-            </div>
-            <div
-              className="hero-line2"
-              style={{
-                fontFamily: '"Clash Display", sans-serif',
-                fontWeight: 800,
-                fontSize: 'clamp(2.6rem, 7vw, 5.2rem)',
-                lineHeight: 1.02,
-                letterSpacing: '-0.02em',
-                color: 'var(--neon)',
-              }}
-            >
-              do jeito certo.
-            </div>
-            <div
+            <h1 style={{ margin: 0 }}>
+              <span
+                className="hero-line1"
+                style={{
+                  display: 'block',
+                  fontFamily: '"Clash Display", sans-serif',
+                  fontWeight: 800,
+                  fontSize: 'clamp(2.6rem, 7vw, 5.2rem)',
+                  lineHeight: 1.02,
+                  letterSpacing: '-0.02em',
+                  color: 'var(--t1)',
+                }}
+              >
+                Seus ingressos,
+              </span>
+              <span
+                className="hero-line2"
+                style={{
+                  display: 'block',
+                  fontFamily: '"Clash Display", sans-serif',
+                  fontWeight: 800,
+                  fontSize: 'clamp(2.6rem, 7vw, 5.2rem)',
+                  lineHeight: 1.02,
+                  letterSpacing: '-0.02em',
+                  color: 'var(--neon)',
+                }}
+              >
+                do jeito certo.
+              </span>
+            </h1>
+            <p
               className="hero-line3"
               style={{
                 fontFamily: '"Inter", sans-serif',
@@ -231,11 +235,11 @@ export default function Home() {
                 letterSpacing: 0,
                 color: 'var(--t2)',
                 textTransform: 'none',
-                marginTop: 14,
+                margin: '14px 0 0',
               }}
             >
               Shows · Festas · Rodeios · Festivais · Teatro
-            </div>
+            </p>
           </div>
 
           {/* Linha horizontal */}
