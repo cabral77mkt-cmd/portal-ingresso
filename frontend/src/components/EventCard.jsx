@@ -85,7 +85,7 @@ const PerfoLine = ({ vertical = true, style }) => (
 );
 
 // variant: 'default' | 'hero'
-const EventCard = memo(function EventCard({ event, index = 0, variant = 'default' }) {
+const EventCard = memo(function EventCard({ event, index = 0, variant = 'default', priority = false }) {
   const navigate   = useNavigate();
   const cardRef    = useRef(null);
   const id         = event.gticket_id || event.id;
@@ -140,7 +140,8 @@ const EventCard = memo(function EventCard({ event, index = 0, variant = 'default
               alt={event.title}
               width="680"
               height="480"
-              loading="lazy"
+              loading={priority ? 'eager' : 'lazy'}
+              fetchpriority={priority ? 'high' : 'auto'}
               decoding="async"
               className="absolute inset-0 w-full h-full object-cover"
               onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }}

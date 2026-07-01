@@ -372,7 +372,7 @@ export default function Home() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {featured.slice(0, 5).map((e, i) => (
                 <div key={e.id} className="card-scroll-wrap">
-                  <EventCard event={e} index={i} />
+                  <EventCard event={e} index={i} priority={i === 0} />
                 </div>
               ))}
             </div>
@@ -439,7 +439,7 @@ export default function Home() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {filtered.map((e, i) => (
                   <div key={e.id} className="card-scroll-wrap">
-                    <EventCard event={e} index={i} />
+                    <EventCard event={e} index={i} priority={i === 0 && !(featured.length > 0 && !isFiltering)} />
                   </div>
                 ))}
               </div>
