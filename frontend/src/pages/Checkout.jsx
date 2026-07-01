@@ -25,6 +25,7 @@ export default function Checkout() {
   const [tickets, setTickets] = useState([]);
   const [paymentMethod, setPaymentMethod] = useState('PIX');
   const [loading, setLoading] = useState(false);
+  const [payStatus, setPayStatus] = useState('');
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState('');
   const [pixData, setPixData] = useState(null);
@@ -410,6 +411,7 @@ export default function Checkout() {
     setSubmitError('');
     try {
       setLoading(true);
+      setPayStatus(isPix ? 'Gerando seu PIX, aguarde alguns segundos…' : 'Processando seu pagamento…');
       // Dispatcher: roteia para o gateway correto conforme config do evento
       const result = await gticket.checkout.pay(gateway, formaPagto, payload);
 
@@ -426,6 +428,7 @@ export default function Checkout() {
         //    de pagamento (pagamento.asp gmet=1). Buscamos com algumas tentativas.
         if (!code && pagId && result?.status !== 'CA') {
           for (let i = 0; i < 5 && !code; i++) {
+            if (i >= 1) setPayStatus('Quase lá, finalizando seu PIX…');
             await new Promise((r) => setTimeout(r, i === 0 ? 800 : 2000));
             try {
               const pay = await gticket.payment.status(pagId);
@@ -456,6 +459,7 @@ export default function Checkout() {
       setSubmitError('Erro ao processar pagamento: ' + err.message);
     } finally {
       setLoading(false);
+      setPayStatus('');
     }
   }
 
@@ -518,6 +522,28 @@ export default function Checkout() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
+      {/* Overlay de processamento — evita a sensação de "travou/deu erro" enquanto o PIX é gerado */}
+      {loading && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center px-4"
+          role="status"
+          aria-live="polite"
+          style={{ background: 'rgba(10,10,10,0.82)', backdropFilter: 'blur(3px)' }}
+        >
+          <div className="card p-8 text-center w-full max-w-xs" style={{ borderRadius: 18 }}>
+            <div
+              aria-hidden="true"
+              className="w-12 h-12 mx-auto mb-5 rounded-full animate-spin"
+              style={{ border: '3px solid var(--bd-md)', borderTopColor: 'var(--neon)' }}
+            />
+            <p className="text-white font-semibold" style={{ fontFamily: '"Clash Display", sans-serif', fontSize: '1.05rem' }}>
+              {payStatus || 'Processando…'}
+            </p>
+            <p className="text-muted text-sm mt-2">Não feche esta página.</p>
+          </div>
+        </div>
+      )}
+
       <h1 className="text-2xl font-bold text-white mb-8">Finalizar Compra</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -774,7 +800,7 @@ export default function Checkout() {
               className="btn-primary w-full py-4 text-lg disabled:opacity-50"
             >
               {loading
-                ? 'Processando...'
+                ? (paymentMethod === 'PIX' ? 'Gerando PIX…' : 'Processando…')
                 : `Pagar R$ ${(paymentMethod === 'PIX' ? total : (selectedInstallment?.totalAmount || total)).toFixed(2).replace('.', ',')}`
               }
             </button>
