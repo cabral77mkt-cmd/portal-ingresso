@@ -232,10 +232,10 @@ export default function Evento() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
-      {/* Banner */}
+      {/* Banner — é o elemento de LCP desta página: carrega com prioridade */}
       {event.image_url && (
         <div className="w-full h-72 rounded-2xl overflow-hidden mb-8">
-          <img src={event.image_url} alt={event.title} loading="lazy" decoding="async" className="w-full h-full object-cover" />
+          <img src={event.image_url} alt={event.title} width="1200" height="480" loading="eager" fetchpriority="high" decoding="async" className="w-full h-full object-cover" />
         </div>
       )}
 
